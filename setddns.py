@@ -1,27 +1,29 @@
 import configparser
-import urllib.request
-import os, stat
+import os, stat, ssl, certifi
+from urllib.request import urlopen
 
 url = 'https://raw.githubusercontent.com/howon-kim/SynologyCloudFlareDDNS/refs/heads/master/cloudflare.php'
 target_file = '/usr/syno/bin/ddns/cloudflare.php'
 
-config= configparser.ConfigParser()
+# 수정: DDNS 프로바이더 설정
+config = configparser.ConfigParser()
 config.read('/etc.defaults/ddns_provider.conf')
 
-try:
-        config['Cloudflare']
-        config['Cloudflare1']
-except KeyError:
-        config['Cloudflare']= {}
-        config['Cloudflare1']= {}
-
-config['Cloudflare']['modulepath'] = '/usr/syno/bin/ddns/cloudflare.php'
-config['Cloudflare']['queryurl'] = 'https://www.cloudflare.com/'
-config['Cloudflare1']['modulepath'] = '/usr/syno/bin/ddns/cloudflare.php'
-config['Cloudflare1']['queryurl'] = 'https://www.cloudflare.com/'
+for section in ['Cloudflare', 'Cloudflare1']:
+    if section not in config:
+        config[section] = {}
+    config[section]['modulepath'] = target_file
+    config[section]['queryurl'] = 'https://www.cloudflare.com/'
 
 with open('/etc.defaults/ddns_provider.conf', 'w') as configfile:
-        config.write(configfile)
+    config.write(configfile)
 
-urllib.request.urlretrieve(url, target_file)
-os.chmod(target_file, stat.S_IRUSR |  stat.S_IWUSR |  stat.S_IXUSR |  stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+# 수정: 안전한 SSL 다운로드
+with urlopen(url, context=ssl.create_default_context(cafile=certifi.where())) as response:
+    with open(target_file, 'wb') as out_file:
+        out_file.write(response.read())
+
+# 권한 설정
+os.chmod(target_file, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+                      stat.S_IRGRP | stat.S_IXGRP |
+                      stat.S_IROTH | stat.S_IXOTH)
