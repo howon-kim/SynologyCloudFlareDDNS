@@ -9,7 +9,7 @@ target_file = '/usr/syno/bin/ddns/cloudflare.php'
 config = configparser.ConfigParser()
 config.read('/etc.defaults/ddns_provider.conf')
 
-for section in ['Cloudflare', 'Cloudflare1']:
+for section in ['Cloudflare', 'Cloudflare1', 'Cloudflare2', 'Cloudflare3', 'Cloudflare4', 'Cloudflare5']:
     if section not in config:
         config[section] = {}
     config[section]['modulepath'] = target_file
